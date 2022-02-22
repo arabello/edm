@@ -1,6 +1,11 @@
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { Path, SpotifyURL, SpotPLConfig } from "../src/domain";
+import {
+  Path,
+  SpotifyURL,
+  SpotPLConfig,
+  SpotPLConfigFromYAMLFile,
+} from "../src/domain";
 
 describe("domain", () => {
   describe("SpotifyURL", () => {
@@ -31,6 +36,29 @@ describe("domain", () => {
 
       const fileAbsolute = "/this/is/a/file.html";
       expect(pipe(Path.decode(fileAbsolute), either.isLeft)).toBe(true);
+    });
+  });
+
+  describe("SpotPLConfigFromYAMLFile", () => {
+    test("should decode valid configuration file", () => {
+      const validConfigFile = `${__dirname}/res/validConfig.yml`;
+      expect(SpotPLConfigFromYAMLFile.decode(validConfigFile)).toStrictEqual(
+        either.right({
+          rootDir: "~/test/",
+          resources: [
+            {
+              url: "https://open.spotify.com/playlist/6AsSaAUMB8TgbnWu4u3ImP?si=9e2750f388dd466a",
+              path: "Techno/Flux",
+            },
+          ],
+        })
+      );
+    });
+    test("should not decode invalid configuration file", () => {
+      const invalidConfigFile = `${__dirname}/res/invalidConfig.yml`;
+      expect(
+        pipe(SpotPLConfigFromYAMLFile.decode(invalidConfigFile), either.isLeft)
+      ).toBe(true);
     });
   });
 });

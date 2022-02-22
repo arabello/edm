@@ -1,7 +1,7 @@
 {
   "name": "spotpl",
   "version": "0.0.1",
-  "description": "Download Spotify songs in a organized way",
+  "description": "Download Spotify songs in an organized way",
   "main": "dist/index.js",
   "repository": "https://github.com/arabello/spotPL",
   "author": "Matteo Pellegrino <matteo.pelle.pellegrino@gmail.com>",
@@ -16,10 +16,12 @@
     "spotpl": "dist/index.js"
   },
   "dependencies": {
+    "@types/js-yaml": "^4.0.5",
     "@types/node": "^17.0.19",
     "commander": "^9.0.0",
     "fp-ts": "^2.11.8",
     "io-ts": "^2.2.16",
+    "js-yaml": "^4.1.0",
     "typescript": "^4.5.5"
   },
   "devDependencies": {

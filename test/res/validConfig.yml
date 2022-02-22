@@ -1,0 +1,4 @@
+rootDir: ~/test/
+resources:
+  - url: https://open.spotify.com/playlist/6AsSaAUMB8TgbnWu4u3ImP?si=9e2750f388dd466a
+    path: Techno/Flux

@@ -1,7 +1,17 @@
-import { array, boolean, either, option, record, string } from "fp-ts";
+import {
+  array,
+  boolean,
+  either,
+  option,
+  record,
+  string,
+  taskEither,
+} from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
+import { existsSync, PathOrFileDescriptor, readFileSync } from "fs";
 import * as t from "io-ts";
 import path from "path";
+import yaml from "js-yaml";
 
 const SPOTIFY_DOMAINS = ["https://open.spotify.com/"];
 
@@ -50,7 +60,7 @@ export type Path = t.TypeOf<typeof Path>;
 
 const PullResource = t.type(
   {
-    spotifyURL: SpotifyURL,
+    url: SpotifyURL,
     path: Path,
   },
   "PullResource"
@@ -67,3 +77,35 @@ export const SpotPLConfig = t.type(
 );
 
 export type SpotPLConfig = t.TypeOf<typeof SpotPLConfig>;
+
+export const SpotPLConfigFromYAMLFile = new t.Type<
+  SpotPLConfig,
+  SpotPLConfig,
+  unknown
+>(
+  "SpotPLConfigFromYAMLFile",
+  (input): input is SpotPLConfig => SpotPLConfig.is(input),
+  (input, ctx) =>
+    pipe(
+      typeof input === "string" ? t.success(input) : t.failure(input, ctx),
+      either.chain((input: string) =>
+        pipe(
+          input,
+          existsSync,
+          boolean.fold(
+            () => t.failure(input, ctx),
+            () => t.success(input)
+          )
+        )
+      ),
+      either.chain((filename: string) => {
+        try {
+          return either.right(yaml.load(readFileSync(filename, "utf-8")));
+        } catch (e) {
+          return either.left(e);
+        }
+      }),
+      either.chain(SpotPLConfig.decode)
+    ),
+  t.identity
+);
