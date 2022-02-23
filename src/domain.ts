@@ -1,17 +1,9 @@
-import {
-  array,
-  boolean,
-  either,
-  option,
-  record,
-  string,
-  taskEither,
-} from "fp-ts";
-import { flow, pipe } from "fp-ts/function";
-import { existsSync, PathOrFileDescriptor, readFileSync } from "fs";
+import { array, boolean, either, string } from "fp-ts";
+import { pipe } from "fp-ts/function";
+import { existsSync, readFileSync } from "fs";
 import * as t from "io-ts";
-import path from "path";
 import yaml from "js-yaml";
+import path from "path";
 
 const SPOTIFY_DOMAINS = ["https://open.spotify.com/"];
 
