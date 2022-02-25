@@ -2,6 +2,7 @@ import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import {
   Path,
+  AbsolutePath,
   SpotifyURL,
   SpotPLConfig,
   SpotPLConfigFromYAMLFile,
@@ -39,12 +40,23 @@ describe("domain", () => {
     });
   });
 
+  describe("AbsolutePath", () => {
+    test("should decode only absolute paths", () => {
+      const relative = "is/relative";
+      const absolute = "/is/absolute";
+      expect(pipe(relative, AbsolutePath.decode, either.isLeft)).toBe(true);
+      expect(AbsolutePath.decode(absolute)).toStrictEqual(
+        either.right(absolute)
+      );
+    });
+  });
+
   describe("SpotPLConfigFromYAMLFile", () => {
     test("should decode valid configuration file", () => {
       const validConfigFile = `${__dirname}/res/validConfig.yml`;
       expect(SpotPLConfigFromYAMLFile.decode(validConfigFile)).toStrictEqual(
         either.right({
-          rootDir: "~/test/",
+          rootDir: "/tmp/",
           resources: [
             {
               url: "https://open.spotify.com/playlist/6AsSaAUMB8TgbnWu4u3ImP?si=9e2750f388dd466a",
