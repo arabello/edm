@@ -1,12 +1,6 @@
-import { either } from "fp-ts";
+import { array, either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import {
-  Path,
-  AbsolutePath,
-  SpotifyURL,
-  SpotPLConfig,
-  SpotPLConfigFromYAMLFile,
-} from "../src/domain";
+import { Path, SpotifyURL, PullResourceFromYAML } from "../src/domain";
 
 describe("domain", () => {
   describe("SpotifyURL", () => {
@@ -40,37 +34,55 @@ describe("domain", () => {
     });
   });
 
-  describe("AbsolutePath", () => {
-    test("should decode only absolute paths", () => {
-      const relative = "is/relative";
-      const absolute = "/is/absolute";
-      expect(pipe(relative, AbsolutePath.decode, either.isLeft)).toBe(true);
-      expect(AbsolutePath.decode(absolute)).toStrictEqual(
-        either.right(absolute)
-      );
-    });
-  });
-
-  describe("SpotPLConfigFromYAMLFile", () => {
-    test("should decode valid configuration file", () => {
-      const validConfigFile = `${__dirname}/res/validConfig.yml`;
-      expect(SpotPLConfigFromYAMLFile.decode(validConfigFile)).toStrictEqual(
-        either.right({
-          rootDir: "/tmp/",
-          resources: [
-            {
-              url: "https://open.spotify.com/playlist/6AsSaAUMB8TgbnWu4u3ImP?si=9e2750f388dd466a",
-              path: "Techno/Flux",
-            },
+  describe("PullResourceFromYAML", () => {
+    test("should decode valid configuration", () => {
+      const yaml = `
+      /top/level/path:
+        folder:
+          subfolder: https://open.spotify.com/top/level/path/folder/subfolder
+        folder2:
+          - https://open.spotify.com/top/level/path/folder2/subfolderA
+          - https://open.spotify.com/top/level/path/folder2/subfolderB
+      /another/top/level:
+        folder:
+          subfolder:
+            nested: https://open.spotify.com//another/top/level/folder/subfolder/nested
+      `;
+      const js = {
+        "/top/level/path": {
+          folder: {
+            subfolder:
+              "https://open.spotify.com/top/level/path/folder/subfolder",
+          },
+          folder2: [
+            "https://open.spotify.com/top/level/path/folder2/subfolderA",
+            "https://open.spotify.com/top/level/path/folder2/subfolderB",
           ],
-        })
-      );
+        },
+        "/another/top/level": {
+          folder: {
+            subfolder: {
+              nested:
+                "https://open.spotify.com//another/top/level/folder/subfolder/nested",
+            },
+          },
+        },
+      };
+      expect(PullResourceFromYAML.decode(yaml)).toStrictEqual(either.right(js));
     });
+
     test("should not decode invalid configuration file", () => {
-      const invalidConfigFile = `${__dirname}/res/invalidConfig.yml`;
-      expect(
-        pipe(SpotPLConfigFromYAMLFile.decode(invalidConfigFile), either.isLeft)
-      ).toBe(true);
+      const yamls = [
+        "https://open.spotify.com/top/level/path/folder/subfolder: /top/level/path",
+        "/top/level/path: https://google.com",
+      ];
+
+      pipe(
+        yamls,
+        array.map(PullResourceFromYAML.decode),
+        array.map(either.isLeft),
+        array.map((x) => expect(x).toBe(true))
+      );
     });
   });
 });
