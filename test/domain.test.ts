@@ -1,6 +1,11 @@
 import { array, either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { Path, SpotifyURL, PullResourceFromYAML } from "../src/domain";
+import {
+  AbsolutePath,
+  Path,
+  PullResourceFromYAML,
+  SpotifyURL,
+} from "../src/domain";
 
 describe("domain", () => {
   describe("SpotifyURL", () => {
@@ -82,6 +87,17 @@ describe("domain", () => {
         array.map(PullResourceFromYAML.decode),
         array.map(either.isLeft),
         array.map((x) => expect(x).toBe(true))
+      );
+    });
+  });
+
+  describe("AbsolutePath", () => {
+    test("should decode only absolute paths", () => {
+      const relative = "is/relative";
+      const absolute = "/is/absolute";
+      expect(pipe(relative, AbsolutePath.decode, either.isLeft)).toBe(true);
+      expect(AbsolutePath.decode(absolute)).toStrictEqual(
+        either.right(absolute)
       );
     });
   });

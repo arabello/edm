@@ -1,21 +1,5 @@
 import { Command } from "commander";
-import { array, either, taskEither } from "fp-ts";
-import { flow, pipe } from "fp-ts/function";
-import { SpotPLConfigFromYAMLFile } from "./domain";
-import { pull } from "./spotpl";
-
-const pullFromConfig = flow(
-  SpotPLConfigFromYAMLFile.decode,
-  either.mapLeft(
-    flow(
-      array.reduce("", (acc, err) => `${acc}\n${err.message}`),
-      Error
-    )
-  ),
-  taskEither.fromEither,
-  taskEither.chain(pull),
-  taskEither.mapLeft(console.error)
-);
+import { pipe } from "fp-ts/function";
 
 const program = new Command();
 

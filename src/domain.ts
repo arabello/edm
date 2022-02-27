@@ -1,8 +1,9 @@
 import { array, boolean, either, string } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import * as t from "io-ts";
+import * as tt from "io-ts-types";
 import yaml from "js-yaml";
-import path from "path";
+import path, { isAbsolute } from "path";
 
 const SPOTIFY_DOMAINS = ["https://open.spotify.com/"];
 
@@ -50,7 +51,7 @@ export const Path = new t.Type<string, string, unknown>(
 export type Path = t.TypeOf<typeof Path>;
 
 const PullResource = t.recursion("PullResource", (self) =>
-  t.record(Path, t.union([self, t.array(SpotifyURL), SpotifyURL]))
+  t.record(Path, t.union([self, tt.nonEmptyArray(SpotifyURL), SpotifyURL]))
 );
 
 export type PullResource = t.TypeOf<typeof PullResource>;
@@ -76,3 +77,21 @@ export const PullResourceFromYAML = new t.Type<
     ),
   t.identity
 );
+
+export type PullResourceFromYAML = t.TypeOf<typeof PullResourceFromYAML>;
+
+export const AbsolutePath = new t.Type<string, string, unknown>(
+  "AbsolutePath",
+  (input): input is string => typeof input === "string",
+  (input, ctx) =>
+    pipe(
+      typeof input === "string" ? t.success(input) : t.failure(input, ctx),
+      either.chain(Path.decode),
+      either.chain((path: Path) =>
+        isAbsolute(path) ? t.success(path) : t.failure(path, ctx)
+      )
+    ),
+  t.identity
+);
+
+export type AbsolutePath = t.TypeOf<typeof AbsolutePath>;
