@@ -3,6 +3,7 @@
 import { Command, InvalidArgumentError } from "commander";
 import { boolean, nonEmptyArray, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
+import { existsSync } from "fs";
 import { PullResourceFromYAML } from "./domain";
 import { fromFile, pullResource } from "./download";
 import { flatten } from "./resource";
@@ -16,13 +17,25 @@ const validateInt = (value: string) => {
   return parsedValue;
 };
 
+const validateFile = (filename: string) => {
+  if (!existsSync(filename)) {
+    throw new InvalidArgumentError(`File ${filename} does not exist.`);
+  }
+
+  if (!filename.endsWith(".yaml") && !filename.endsWith(".yml")) {
+    throw new InvalidArgumentError(`File ${filename} is not a YAML file.`);
+  }
+
+  return filename;
+};
+
 const program = new Command();
 
 program
   .name("spotpl")
   .version("0.0.1")
   .description("Download Spotify songs in a organized way")
-  .argument("<file>", "YAML file to be processed")
+  .argument("<file>", "YAML file to be processed", validateFile)
   .option(
     "-nt, --n-threads <number>",
     "Number of threads used by spotDL",
