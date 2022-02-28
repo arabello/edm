@@ -8,7 +8,7 @@ to download Spotify songs organized by folders based on a YAML config.
 ```shell
 Usage: spotpl [options] <file>
 
-Download Spotify songs in a organized way
+Download Spotify songs in an organized way
 
 Arguments:
   file                       YAML file to be processed
@@ -19,7 +19,7 @@ Options:
   -h, --help                 display help for command
 ```
 
-For example. The YAML file
+For example, the YAML file
 
 ```yaml
 soundvilla:
@@ -56,11 +56,11 @@ The YAML file specifies a `PullResource` which is recursively defined as:
 PullResource = Record<Path, SpotifyURL | NonEmptyArray<SpotifyURL> | PullResource>
 ```
 
-so each key in the YAML file is a path and the value is a Spotify URL, a list of Spotify URLS or itself.
+so each key in the YAML file is a path while the value is a Spotify URL, a list of Spotify URLS or itself.
 
 ### Paths
 
-You can specifiy absolute paths as top-level keys:
+You can specify absolute paths as top-level keys
 
 ```yaml
 /Users/pelle/Music/:
@@ -69,8 +69,7 @@ You can specifiy absolute paths as top-level keys:
 
 otherwise paths are relative to the current working directory.
 
-Non top-level keys are interpreted as sub-folders, nested indefinetly.
-For example:
+Non top-level keys are interpreted as sub-folders, nested indefinetly. For example
 
 ```yaml
 very:

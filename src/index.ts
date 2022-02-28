@@ -34,7 +34,7 @@ const program = new Command();
 program
   .name("spotpl")
   .version("0.0.1")
-  .description("Download Spotify songs in a organized way")
+  .description("Download Spotify songs in an organized way")
   .argument("<file>", "YAML file to be processed", validateFile)
   .option(
     "-nt, --n-threads <number>",
