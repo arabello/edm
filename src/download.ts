@@ -1,11 +1,11 @@
 import { array, either, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
-import * as t from "io-ts";
-import util from "util";
 import { TaskEither } from "fp-ts/TaskEither";
 import fs from "fs";
-import { execSync } from "child_process";
+import * as t from "io-ts";
+import util from "util";
 import { AbsolutePath, Path, SpotifyURL } from "./domain";
+import { spawnSync } from "child_process";
 
 const readFile = util.promisify(fs.readFile);
 
@@ -26,16 +26,20 @@ export const fromFile: <T>(
     )
   );
 
-export const pullResource = (path: AbsolutePath) => (url: SpotifyURL) =>
-  pipe(
-    taskEither.tryCatch(
-      () => fs.promises.mkdir(path, { recursive: true }),
-      either.toError
-    ),
-    taskEither.map(() => {
-      execSync(`spotdl ${url} --dt 8 --st 4`, {
-        cwd: path,
-        stdio: "inherit",
-      });
-    })
-  );
+export const pullResource =
+  (path: AbsolutePath, nThreads: number = 1) =>
+  (url: SpotifyURL) =>
+    pipe(
+      taskEither.tryCatch(
+        () => fs.promises.mkdir(path, { recursive: true }),
+        either.toError
+      ),
+      taskEither.map(() => {
+        const args = [url, "--dt", `${nThreads}`, "--st", `${nThreads}`];
+
+        spawnSync(`spotdl`, args, {
+          cwd: path,
+          stdio: "inherit",
+        });
+      })
+    );
