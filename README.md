@@ -3,6 +3,19 @@
 Extremely naive wrapper around [spotDL](https://github.com/spotDL/spotify-downloader)
 to download Spotify songs organized by folders based on a YAML config.
 
+## Installation
+
+Install [spotDL](https://github.com/spotDL/spotify-downloader).
+
+Clone this repository, build and install the package globally:
+
+```shell
+git clone git@github.com:arabello/spotPL.git
+cd spotPL
+yarn && yarn build
+yarn global add file:$PWD
+```
+
 ## Usage
 
 ```shell
