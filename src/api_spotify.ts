@@ -1,4 +1,4 @@
-import { either, option, task, taskEither } from "fp-ts";
+import { either, taskEither } from "fp-ts";
 import open from "open";
 import { URLSearchParams } from "url";
 import dotenv from "dotenv";
@@ -8,11 +8,23 @@ import crypto from "crypto";
 import randomstring from "randomstring";
 import axios from "axios";
 import base64url from "base64url";
+import SpotifyWebApi from "spotify-web-api-node";
+import flatCache from "flat-cache";
+import path from "path";
 
 dotenv.config();
 
+const CACHE_ID = "spotify";
+const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
+const cache = flatCache.load(CACHE_ID);
+
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${process.env.SPOTIFY_REDIRECT_URI_HOST}:${process.env.SPOTIFY_REDIRECT_URI_PORT}${process.env.SPOTIFY_REDIRECT_URI_PATH}`;
+
+var spotifyApi = new SpotifyWebApi({
+  clientId: SPOTIFY_CLIENT_ID,
+  redirectUri: SPOTIFY_REDIRECT_URI,
+});
 
 type AuthParams = {
   state: string;
@@ -35,19 +47,6 @@ const foldAuthParams: <T>(match: {
   }
 };
 
-const authorizeEndpoint = "https://accounts.spotify.com/authorize";
-const makeAuthorizeParams = (code_verifier: string) => ({
-  response_type: "code",
-  client_id: SPOTIFY_CLIENT_ID,
-  scope: "",
-  redirect_uri: SPOTIFY_REDIRECT_URI,
-  state: randomstring.generate(16),
-  code_challenge_method: "S256",
-  code_challenge: base64url.encode(
-    Buffer.from(crypto.createHash("sha256").update(code_verifier).digest())
-  ),
-});
-
 type AccessTokenSuccess = {
   access_token: string;
   token_type: string;
@@ -56,33 +55,46 @@ type AccessTokenSuccess = {
   refresh_token: string;
 };
 
-const tokenEndpoint = "https://accounts.spotify.com/api/token";
-const tokenParams = (code: string, code_verifier: string) => ({
-  grant_type: "authorization_code",
-  code,
-  redirect_uri: SPOTIFY_REDIRECT_URI,
-  client_id: SPOTIFY_CLIENT_ID,
-  code_verifier: code_verifier,
-});
-
-class User {
-  private accessToken: option.Option<string> = option.none;
-
-  setAccessToken(accessToken: string) {
-    this.accessToken = option.some(accessToken);
+const initTokensFromCache: () => boolean = () => {
+  const tokenReponse: AccessTokenSuccess = cache.getKey(
+    CACHE_TOKEN_RESPONSE_KEY
+  );
+  console.log(tokenReponse);
+  if (!tokenReponse) {
+    return false;
   }
+  spotifyApi.setAccessToken(tokenReponse.access_token);
+  spotifyApi.setRefreshToken(tokenReponse.refresh_token);
+  return true;
+};
 
-  getAccessToken(): option.Option<string> {
-    return this.accessToken;
+export const login = async () => {
+  if (initTokensFromCache()) {
+    return Promise.resolve();
   }
-}
+  const code_verifier = randomstring.generate(64);
+  const authorizeEndpoint = "https://accounts.spotify.com/authorize";
+  const makeAuthorizeParams = (code_verifier: string) => ({
+    response_type: "code",
+    client_id: SPOTIFY_CLIENT_ID,
+    scope: "",
+    redirect_uri: SPOTIFY_REDIRECT_URI,
+    state: randomstring.generate(16),
+    code_challenge_method: "S256",
+    code_challenge: base64url.encode(
+      Buffer.from(crypto.createHash("sha256").update(code_verifier).digest())
+    ),
+  });
 
-const user = new User();
+  const tokenEndpoint = "https://accounts.spotify.com/api/token";
+  const tokenParams = (code: string, code_verifier: string) => ({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: SPOTIFY_REDIRECT_URI,
+    client_id: SPOTIFY_CLIENT_ID,
+    code_verifier: code_verifier,
+  });
 
-const makeCallbackServer = (
-  code_verifier: string,
-  onSuccess: (data: AccessTokenSuccess) => void = () => {}
-) => {
   const app = express();
   const server = app.listen(process.env.SPOTIFY_REDIRECT_URI_PORT, () => {
     console.log(
@@ -109,7 +121,8 @@ const makeCallbackServer = (
                 },
               }
             );
-            onSuccess(tokenReponse.data);
+            cache.setKey(CACHE_TOKEN_RESPONSE_KEY, tokenReponse.data);
+            cache.save();
             server.close();
             return res.send("<script>window.close()</script>");
           }, either.toError),
@@ -120,20 +133,30 @@ const makeCallbackServer = (
       })
     )()
   );
+
+  await open(
+    `${authorizeEndpoint}?${new URLSearchParams(
+      makeAuthorizeParams(code_verifier)
+    ).toString()}`
+  );
+
+  return server;
 };
 
-export const login = pipe(
-  taskEither.tryCatch(() => {
-    const code_verifier = randomstring.generate(64);
-    makeCallbackServer(code_verifier, (data) => {
-      user.setAccessToken(data.access_token);
-      console.log(user.getAccessToken());
-    });
-
-    return open(
-      `${authorizeEndpoint}?${new URLSearchParams(
-        makeAuthorizeParams(code_verifier)
-      ).toString()}`
-    );
-  }, either.toError)
-);
+export const getPlaylists = async () => {
+  if (!initTokensFromCache()) {
+    return Promise.reject("No token found");
+  }
+  let playlists: Array<SpotifyApi.PlaylistObjectSimplified> = [];
+  let response = await spotifyApi.getUserPlaylists();
+  let offset = 0;
+  while (response) {
+    playlists = playlists.concat(response.body.items);
+    if (!response.body.next) {
+      break;
+    }
+    offset += 1;
+    response = await spotifyApi.getUserPlaylists({ offset });
+  }
+  return playlists;
+};

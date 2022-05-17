@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 import { Argument, Command, InvalidArgumentError } from "commander";
-import { nonEmptyArray, taskEither } from "fp-ts";
+import { array, nonEmptyArray, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { existsSync } from "fs";
-import { login } from "./api_spotify";
+import { getPlaylists, login } from "./api_spotify";
 import { PullResourceFromYAML } from "./domain";
 import { fromFile, pullResource } from "./download";
 import { flatten } from "./resource";
-import express from "express";
 
 const validateInt = (value: string) => {
   const parsedValue = parseInt(value, 10);
@@ -50,9 +49,19 @@ program
   .addArgument(
     new Argument("<service>", "Service to login to").choices(["spotify"])
   )
-  .action(() => {
-    login();
+  .action(async () => {
+    await login();
   });
+
+program.command("playlists").action(async () => {
+  const playlists = await getPlaylists();
+  console.log(
+    pipe(
+      playlists,
+      array.map((p) => p.name)
+    )
+  );
+});
 
 program.parse();
 
