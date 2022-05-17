@@ -32,10 +32,7 @@ const validateFile = (filename: string) => {
 
 const program = new Command();
 
-program
-  .name("spotpl")
-  .version("0.0.1")
-  .description("Download Spotify songs in an organized way");
+program.name("edm").version("0.0.1").description("Spotify utilities for DJs");
 
 program
   .command("login")
