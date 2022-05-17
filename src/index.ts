@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import { Argument, Command, InvalidArgumentError } from "commander";
-import { array, nonEmptyArray, taskEither } from "fp-ts";
+import { nonEmptyArray, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { existsSync } from "fs";
-import { getPlaylists, login } from "./api_spotify";
+import { login } from "./api_spotify";
 import { PullResourceFromYAML } from "./domain";
 import { fromFile, pullResource } from "./download";
 import { flatten } from "./resource";
@@ -35,17 +35,11 @@ const program = new Command();
 program
   .name("spotpl")
   .version("0.0.1")
-  .description("Download Spotify songs in an organized way")
-  .argument("<file>", "YAML file to be processed", validateFile)
-  .option(
-    "-nt, --n-threads <number>",
-    "Number of threads used by spotDL",
-    validateInt,
-    4
-  );
+  .description("Download Spotify songs in an organized way");
 
 program
   .command("login")
+  .description("Login to external services for advanced features")
   .addArgument(
     new Argument("<service>", "Service to login to").choices(["spotify"])
   )
@@ -53,35 +47,35 @@ program
     await login();
   });
 
-program.command("playlists").action(async () => {
-  const playlists = await getPlaylists();
-  console.log(
+program
+  .command("pull")
+  .description("Download Spotify music from a YAML descriptor")
+  .argument("<file>", "YAML file to be processed", validateFile)
+  .option(
+    "-nt, --n-threads <number>",
+    "Number of threads used by spotDL",
+    validateInt,
+    4
+  )
+  .action(([file, options, ...args]) => {
     pipe(
-      playlists,
-      array.map((p) => p.name)
-    )
-  );
-});
-
-program.parse();
-
-const options = program.opts();
-
-pipe(
-  program.args[0],
-  fromFile(PullResourceFromYAML),
-  taskEither.map(flatten),
-  taskEither.chain(
-    flow(
-      nonEmptyArray.map((res) =>
-        pipe(
-          res.urls,
-          nonEmptyArray.map(pullResource(res.path, options.nThreads))
+      file,
+      fromFile(PullResourceFromYAML),
+      taskEither.map(flatten),
+      taskEither.chain(
+        flow(
+          nonEmptyArray.map((res) =>
+            pipe(
+              res.urls,
+              nonEmptyArray.map(pullResource(res.path, options.nThreads))
+            )
+          ),
+          nonEmptyArray.flatten,
+          taskEither.sequenceArray
         )
       ),
-      nonEmptyArray.flatten,
-      taskEither.sequenceArray
-    )
-  ),
-  taskEither.mapLeft(console.error)
-)();
+      taskEither.mapLeft(console.error)
+    )();
+  });
+
+program.parse();
