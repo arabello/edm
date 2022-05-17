@@ -10,13 +10,14 @@ import axios from "axios";
 import base64url from "base64url";
 import SpotifyWebApi from "spotify-web-api-node";
 import flatCache from "flat-cache";
+import os from "os";
 import path from "path";
 
 dotenv.config();
 
 const CACHE_ID = "spotify";
 const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
-const cache = flatCache.load(CACHE_ID);
+const cache = flatCache.load(CACHE_ID, path.join(os.tmpdir(), ".edmcache"));
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${process.env.SPOTIFY_REDIRECT_URI_HOST}:${process.env.SPOTIFY_REDIRECT_URI_PORT}${process.env.SPOTIFY_REDIRECT_URI_PATH}`;
@@ -59,7 +60,6 @@ const initTokensFromCache: () => boolean = () => {
   const tokenReponse: AccessTokenSuccess = cache.getKey(
     CACHE_TOKEN_RESPONSE_KEY
   );
-  console.log(tokenReponse);
   if (!tokenReponse) {
     return false;
   }
@@ -96,11 +96,7 @@ export const login = async () => {
   });
 
   const app = express();
-  const server = app.listen(process.env.SPOTIFY_REDIRECT_URI_PORT, () => {
-    console.log(
-      `Redirect URI callback listening on port ${process.env.SPOTIFY_REDIRECT_URI_PORT} ...`
-    );
-  });
+  const server = app.listen(process.env.SPOTIFY_REDIRECT_URI_PORT);
 
   app.get(process.env.SPOTIFY_REDIRECT_URI_PATH, (req, res) =>
     pipe(
@@ -158,5 +154,5 @@ export const getPlaylists = async () => {
     offset += 1;
     response = await spotifyApi.getUserPlaylists({ offset });
   }
-  return playlists;
+  return Promise.resolve(playlists);
 };

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import { Argument, Command, InvalidArgumentError } from "commander";
-import { nonEmptyArray, taskEither } from "fp-ts";
+import { array, nonEmptyArray, record, semigroup, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { existsSync } from "fs";
-import { login } from "./api_spotify";
+import { getPlaylists, login } from "./api_spotify";
 import { PullResourceFromYAML } from "./domain";
 import { fromFile, pullResource } from "./download";
 import { flatten } from "./resource";
+import yaml from "js-yaml";
+import fs from "fs";
 
 const validateInt = (value: string) => {
   const parsedValue = parseInt(value, 10);
@@ -23,6 +25,12 @@ const validateFile = (filename: string) => {
     throw new InvalidArgumentError(`File ${filename} does not exist.`);
   }
 
+  validateYamlExtension(filename);
+
+  return filename;
+};
+
+const validateYamlExtension = (filename: string) => {
   if (!filename.endsWith(".yaml") && !filename.endsWith(".yml")) {
     throw new InvalidArgumentError(`File ${filename} is not a YAML file.`);
   }
@@ -33,16 +41,6 @@ const validateFile = (filename: string) => {
 const program = new Command();
 
 program.name("edm").version("0.0.1").description("Spotify utilities for DJs");
-
-program
-  .command("login")
-  .description("Login to external services for advanced features")
-  .addArgument(
-    new Argument("<service>", "Service to login to").choices(["spotify"])
-  )
-  .action(async () => {
-    await login();
-  });
 
 program
   .command("pull")
@@ -74,5 +72,49 @@ program
       taskEither.mapLeft(console.error)
     )();
   });
+
+program
+  .command("login")
+  .description("Login to external services for advanced features")
+  .addArgument(
+    new Argument("<service>", "Service to login to").choices(["spotify"])
+  )
+  .action(() => {
+    login();
+  });
+
+program
+  .command("playlists")
+  .description("Operate on Spotify playlists")
+  .option("-l, --list", "Print playlists titles")
+  .option(
+    "-f, --file <file>",
+    "Create the YAML file descriptor",
+    validateYamlExtension
+  )
+  .action((options) =>
+    getPlaylists().then((playlists) => {
+      if (options.list) {
+        pipe(
+          playlists,
+          array.map((p) => p.name),
+          array.map(console.log)
+        );
+      }
+
+      if (options.file) {
+        const yamlString = yaml.dump({
+          edm_download: Object.assign(
+            {},
+            ...pipe(
+              playlists,
+              array.map((p) => ({ [p.name]: p.href }))
+            )
+          ),
+        });
+        fs.writeFileSync(options.file, yamlString);
+      }
+    })
+  );
 
 program.parse();
