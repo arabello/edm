@@ -156,3 +156,5 @@ export const getPlaylists = async () => {
   }
   return Promise.resolve(playlists);
 };
+
+export const getUser = () => spotifyApi.getMe();

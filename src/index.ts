@@ -4,7 +4,7 @@ import { Argument, Command, InvalidArgumentError } from "commander";
 import { array, nonEmptyArray, record, semigroup, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { existsSync } from "fs";
-import { getPlaylists, login } from "./api_spotify";
+import { getPlaylists, getUser, login } from "./api_spotify";
 import { PullResourceFromYAML } from "./domain";
 import { fromFile, pullResource } from "./download";
 import { flatten } from "./resource";
@@ -84,37 +84,45 @@ program
   });
 
 program
-  .command("playlists")
-  .description("Operate on Spotify playlists")
-  .option("-l, --list", "Print playlists titles")
+  .command("create")
+  .description("Create YAML descriptor with your personal Spotify playlists")
   .option(
     "-f, --file <file>",
-    "Create the YAML file descriptor",
+    "Filename (default is Spotify display name)",
     validateYamlExtension
   )
   .action((options) =>
-    getPlaylists().then((playlists) => {
-      if (options.list) {
-        pipe(
-          playlists,
-          array.map((p) => p.name),
-          array.map(console.log)
-        );
-      }
-
-      if (options.file) {
-        const yamlString = yaml.dump({
-          edm_download: Object.assign(
-            {},
-            ...pipe(
-              playlists,
-              array.map((p) => ({ [p.name]: p.href }))
+    getPlaylists()
+      .then((playlists) => {
+        const createFile = (filename: string) =>
+          fs.writeFileSync(
+            filename,
+            yaml.dump(
+              Object.assign(
+                {},
+                ...pipe(
+                  playlists,
+                  array.map((p) => ({ [p.name]: p.href }))
+                )
+              )
             )
-          ),
-        });
-        fs.writeFileSync(options.file, yamlString);
-      }
-    })
+          );
+
+        if (options.file) {
+          createFile(options.file);
+        } else {
+          getUser()
+            .then((user) => {
+              if (user.body.display_name) {
+                createFile(`${user.body.display_name}.yaml`);
+              } else {
+                createFile(options.file);
+              }
+            })
+            .catch(console.error);
+        }
+      })
+      .catch(console.error)
   );
 
 program.parse();
