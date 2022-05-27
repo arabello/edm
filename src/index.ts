@@ -52,7 +52,7 @@ program
     validateInt,
     4
   )
-  .action(([file, options, ...args]) => {
+  .action((file, options) => {
     pipe(
       file,
       fromFile(PullResourceFromYAML),

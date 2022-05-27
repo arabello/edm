@@ -1,7 +1,7 @@
 {
   "name": "spotpl",
   "version": "0.0.1",
-  "description": "Download Spotify songs in an organized way",
+  "description": "Download Spotify songs (from YouTube) in an organized way",
   "main": "dist/index.js",
   "repository": "https://github.com/arabello/spotPL",
   "author": "Matteo Pellegrino <matteo.pelle.pellegrino@gmail.com>",
@@ -13,7 +13,7 @@
     "test": "jest"
   },
   "bin": {
-    "spotpl": "dist/index.js"
+    "edm": "dist/index.js"
   },
   "dependencies": {
     "@types/crypto-js": "^4.1.1",

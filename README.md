@@ -1,38 +1,27 @@
-# SpotPL
+# Easily Download Music
 
-Extremely naive wrapper around [spotDL](https://github.com/spotDL/spotify-downloader)
-to download Spotify songs organized by folders based on a YAML config.
+`edm` helps you to batch download Spotify resources (playlists, album, songs, etc.) into a folders structure. It is a naive wrapper around the wonderful [spotDL](https://github.com/spotDL/spotify-downloader) project.
 
 ## Installation
 
-Install [spotDL](https://github.com/spotDL/spotify-downloader).
+No binaries are available at the moment. You need [git](https://git-scm.com/) and [yarn](https://yarnpkg.com/) installed in your system.
 
-Clone this repository, build and install the package globally:
+[Install spotDL](https://github.com/spotDL/spotify-downloader#installation).
+
+Clone this repository. Then build and install the package globally:
 
 ```shell
-git clone git@github.com:arabello/spotPL.git
-cd spotPL
+git clone git@github.com:arabello/edm.git
+cd edm
 yarn && yarn build
 yarn global add file:$PWD
 ```
 
 ## Usage
 
-```shell
-Usage: spotpl [options] <file>
+The folders structure must be provided via a YAML descriptor: the keys represent folders while values can be any resource supported by [spotDL](https://github.com/spotDL/spotify-downloader).
 
-Download Spotify songs in an organized way
-
-Arguments:
-  file                       YAML file to be processed
-
-Options:
-  -V, --version              output the version number
-  -nt, --n-threads <number>  Number of threads used by spotDL (default: 4)
-  -h, --help                 display help for command
-```
-
-For example, the YAML file
+For example,
 
 ```yaml
 soundvilla:
@@ -58,10 +47,35 @@ soundvilla
 └── techno
     ├── Vibration
     └── Void
-
 ```
 
-### YAML file structure
+being the top level folder (`soundvilla`) relative to where you are running `edm`.
+For more details, see [YAML descriptor](#yaml-descriptor) section.
+
+Once you created the YAML descriptor, `pull` the resources:
+
+```
+edm pull <filename.yaml>
+```
+
+### Generate the descriptor
+
+To ease the creation of the YAML descriptor, you can login to your Spotify
+
+```
+edm login spotify
+```
+
+and generate the YAML descriptor:
+
+```
+edm create -f <filename.yaml>
+```
+
+This creates a `<filename.yaml>` file containing a flat descriptions of all your
+Spotify playlists. At the moment, only playlists you created are supported.
+
+### YAML descriptor
 
 The YAML file specifies a `PullResource` which is recursively defined as:
 
@@ -113,8 +127,19 @@ Rock It:
 
 ## Why?
 
-I needed something to ease my `spotDL` user experience to "sync" my Spotify's playlists offline, in a organized way.
+As an hobbist DJ, I needed something to ease my `spotDL` user experience in order to download my Spotify's playlists and import them into DJ softwares.
 
 #### But why in Node?
 
 'cause I'm fluent in web technologies and I'd like an Electron GUI in the future.
+
+## Troubleshooting
+
+While running `edm create` you get an error starting with
+
+```
+WebapiRegularError: An error occurred while communicating with Spotify's Web API.
+Details: The access token expired.
+```
+
+you have to login to Spotify again with `edm login spotify`.
