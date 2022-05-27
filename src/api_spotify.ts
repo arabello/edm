@@ -18,7 +18,6 @@ dotenv.config();
 const CACHE_ID = "spotify";
 const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
 const cache = flatCache.load(CACHE_ID, path.join(os.tmpdir(), ".edmcache"));
-console.log(os.tmpdir());
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${process.env.SPOTIFY_REDIRECT_URI_HOST}:${process.env.SPOTIFY_REDIRECT_URI_PORT}${process.env.SPOTIFY_REDIRECT_URI_PATH}`;
 
