@@ -1,9 +1,9 @@
 {
-  "name": "spotpl",
+  "name": "edm",
   "version": "0.0.1",
   "description": "Download Spotify songs (from YouTube) in an organized way",
   "main": "dist/index.js",
-  "repository": "https://github.com/arabello/spotPL",
+  "repository": "https://github.com/arabello/edm",
   "author": "Matteo Pellegrino <matteo.pelle.pellegrino@gmail.com>",
   "license": "MIT",
   "scripts": {
