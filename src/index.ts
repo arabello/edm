@@ -102,7 +102,7 @@ program
                 {},
                 ...pipe(
                   playlists,
-                  array.map((p) => ({ [p.name]: p.href }))
+                  array.map((p) => ({ [p.name]: p.external_urls.spotify }))
                 )
               )
             )
