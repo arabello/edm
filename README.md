@@ -13,8 +13,7 @@ Clone this repository. Then build and install the package globally:
 ```shell
 git clone git@github.com:arabello/edm.git
 cd edm
-yarn && yarn build
-yarn global add file:$PWD
+yarn && yarn build && yarn global add file:$PWD
 ```
 
 ## Usage

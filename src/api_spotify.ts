@@ -1,7 +1,6 @@
 import { either, taskEither } from "fp-ts";
 import open from "open";
 import { URLSearchParams } from "url";
-import dotenv from "dotenv";
 import { pipe } from "fp-ts/function";
 import express from "express";
 import crypto from "crypto";
@@ -12,14 +11,13 @@ import SpotifyWebApi from "spotify-web-api-node";
 import flatCache from "flat-cache";
 import os from "os";
 import path from "path";
-
-dotenv.config();
+import config from "./config";
 
 const CACHE_ID = "spotify";
 const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
 const cache = flatCache.load(CACHE_ID, path.join(os.tmpdir(), ".edmcache"));
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const SPOTIFY_REDIRECT_URI = `${process.env.SPOTIFY_REDIRECT_URI_HOST}:${process.env.SPOTIFY_REDIRECT_URI_PORT}${process.env.SPOTIFY_REDIRECT_URI_PATH}`;
+const SPOTIFY_CLIENT_ID = config.SPOTIFY_CLIENT_ID;
+const SPOTIFY_REDIRECT_URI = `${config.SPOTIFY_REDIRECT_URI_HOST}:${config.SPOTIFY_REDIRECT_URI_PORT}${config.SPOTIFY_REDIRECT_URI_PATH}`;
 
 var spotifyApi = new SpotifyWebApi({
   clientId: SPOTIFY_CLIENT_ID,
@@ -95,9 +93,9 @@ export const login = async () => {
   });
 
   const app = express();
-  const server = app.listen(process.env.SPOTIFY_REDIRECT_URI_PORT);
+  const server = app.listen(config.SPOTIFY_REDIRECT_URI_PORT);
 
-  app.get(process.env.SPOTIFY_REDIRECT_URI_PATH, (req, res) =>
+  app.get(config.SPOTIFY_REDIRECT_URI_PATH, (req, res) =>
     pipe(
       req.query,
       foldAuthParams({
