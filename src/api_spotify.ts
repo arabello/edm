@@ -18,6 +18,7 @@ const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
 const cache = flatCache.load(CACHE_ID, path.join(os.tmpdir(), ".edmcache"));
 const SPOTIFY_CLIENT_ID = config.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${config.SPOTIFY_REDIRECT_URI_HOST}:${config.SPOTIFY_REDIRECT_URI_PORT}${config.SPOTIFY_REDIRECT_URI_PATH}`;
+const SPOTIFY_SCOPES = ["playlist-read-private"];
 
 var spotifyApi = new SpotifyWebApi({
   clientId: SPOTIFY_CLIENT_ID,
@@ -66,15 +67,15 @@ const initTokensFromCache: () => boolean = () => {
 };
 
 export const login = async () => {
-  if (initTokensFromCache()) {
-    return Promise.resolve();
-  }
+  // if (initTokensFromCache()) {
+  //   return Promise.resolve();
+  // }
   const code_verifier = randomstring.generate(64);
   const authorizeEndpoint = "https://accounts.spotify.com/authorize";
   const makeAuthorizeParams = (code_verifier: string) => ({
     response_type: "code",
     client_id: SPOTIFY_CLIENT_ID,
-    scope: "",
+    scope: SPOTIFY_SCOPES,
     redirect_uri: SPOTIFY_REDIRECT_URI,
     state: randomstring.generate(16),
     code_challenge_method: "S256",

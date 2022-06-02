@@ -86,14 +86,20 @@ program
 program
   .command("create")
   .description("Create YAML descriptor with your personal Spotify playlists")
-  .option(
-    "-f, --file <file>",
-    "Filename (default is Spotify display name)",
-    validateYamlExtension
+  .addArgument(
+    new Argument(
+      "[file]",
+      "Filename (default is Spotify display name)"
+    ).argParser(validateYamlExtension)
   )
-  .action((options) =>
+  .option("-if, --include-followed", "Include playlists you follow", false)
+  .action((filename, options) => {
     getPlaylists()
-      .then((playlists) => {
+      .then(async (playlists) => {
+        const uid = options.includeFollowed
+          ? undefined
+          : await getUser().then((user) => user.body.id);
+
         const createFile = (filename: string) =>
           fs.writeFileSync(
             filename,
@@ -102,27 +108,28 @@ program
                 {},
                 ...pipe(
                   playlists,
+                  array.filter((p) => (uid ? p.owner.id === uid : true)),
                   array.map((p) => ({ [p.name]: p.external_urls.spotify }))
                 )
               )
             )
           );
 
-        if (options.file) {
-          createFile(options.file);
+        if (filename) {
+          createFile(filename);
         } else {
           getUser()
             .then((user) => {
               if (user.body.display_name) {
                 createFile(`${user.body.display_name}.yaml`);
               } else {
-                createFile(options.file);
+                createFile(filename);
               }
             })
             .catch(console.error);
         }
       })
-      .catch(console.error)
-  );
+      .catch(console.error);
+  });
 
 program.parse();
