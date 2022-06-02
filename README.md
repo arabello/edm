@@ -68,11 +68,17 @@ edm login spotify
 and generate the YAML descriptor:
 
 ```
-edm create -f <filename.yaml>
+edm create [filename.yaml]
 ```
 
-This creates a `<filename.yaml>` file containing a flat descriptions of all your
-Spotify playlists. At the moment, only playlists you created are supported.
+This creates a `filename.yaml` file containing a flat descriptions of all your
+Spotify playlists. The filename argument is optional: if not provided, the Spotify's display name is used.
+
+To include the playlists you follow, use the `-if, --include-followed` flag:
+
+```
+edm create [filename.yaml] --include-followed
+```
 
 ### YAML descriptor
 
