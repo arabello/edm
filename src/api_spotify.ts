@@ -8,14 +8,8 @@ import randomstring from "randomstring";
 import axios from "axios";
 import base64url from "base64url";
 import SpotifyWebApi from "spotify-web-api-node";
-import flatCache from "flat-cache";
-import os from "os";
-import path from "path";
 import config from "./config";
 
-const CACHE_ID = "spotify";
-const CACHE_TOKEN_RESPONSE_KEY = "tokenResponse";
-const cache = flatCache.load(CACHE_ID, path.join(os.tmpdir(), ".edmcache"));
 const SPOTIFY_CLIENT_ID = config.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${config.SPOTIFY_REDIRECT_URI_HOST}:${config.SPOTIFY_REDIRECT_URI_PORT}${config.SPOTIFY_REDIRECT_URI_PATH}`;
 const SPOTIFY_SCOPES = ["playlist-read-private"];
@@ -54,22 +48,7 @@ type AccessTokenSuccess = {
   refresh_token: string;
 };
 
-const initTokensFromCache: () => boolean = () => {
-  const tokenReponse: AccessTokenSuccess = cache.getKey(
-    CACHE_TOKEN_RESPONSE_KEY
-  );
-  if (!tokenReponse) {
-    return false;
-  }
-  spotifyApi.setAccessToken(tokenReponse.access_token);
-  spotifyApi.setRefreshToken(tokenReponse.refresh_token);
-  return true;
-};
-
 export const login = async () => {
-  // if (initTokensFromCache()) {
-  //   return Promise.resolve();
-  // }
   const code_verifier = randomstring.generate(64);
   const authorizeEndpoint = "https://accounts.spotify.com/authorize";
   const makeAuthorizeParams = (code_verifier: string) => ({
@@ -115,8 +94,8 @@ export const login = async () => {
                 },
               }
             );
-            cache.setKey(CACHE_TOKEN_RESPONSE_KEY, tokenReponse.data);
-            cache.save();
+            spotifyApi.setAccessToken(tokenReponse.data.access_token);
+            spotifyApi.setRefreshToken(tokenReponse.data.refresh_token);
             server.close();
             return res.send("<script>window.close()</script>");
           }, either.toError),
@@ -138,9 +117,6 @@ export const login = async () => {
 };
 
 export const getPlaylists = async () => {
-  if (!initTokensFromCache()) {
-    return Promise.reject("No token found");
-  }
   let playlists: Array<SpotifyApi.PlaylistObjectSimplified> = [];
   let response = await spotifyApi.getUserPlaylists();
   let offset = 0;
