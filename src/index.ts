@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Argument, Command, InvalidArgumentError } from "commander";
-import { array, nonEmptyArray, record, semigroup, taskEither } from "fp-ts";
+import { array, nonEmptyArray, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { existsSync } from "fs";
 import { getPlaylists, getUser, login } from "./api_spotify";

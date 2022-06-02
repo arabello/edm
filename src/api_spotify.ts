@@ -9,15 +9,43 @@ import axios from "axios";
 import base64url from "base64url";
 import SpotifyWebApi from "spotify-web-api-node";
 import config from "./config";
+import cache from "./cache";
+import { option } from "fp-ts";
 
 const SPOTIFY_CLIENT_ID = config.SPOTIFY_CLIENT_ID;
 const SPOTIFY_REDIRECT_URI = `${config.SPOTIFY_REDIRECT_URI_HOST}:${config.SPOTIFY_REDIRECT_URI_PORT}${config.SPOTIFY_REDIRECT_URI_PATH}`;
 const SPOTIFY_SCOPES = ["playlist-read-private"];
 
-var spotifyApi = new SpotifyWebApi({
+const spotifyApi = new SpotifyWebApi({
   clientId: SPOTIFY_CLIENT_ID,
   redirectUri: SPOTIFY_REDIRECT_URI,
 });
+
+type TokenData = {
+  access_token: string;
+  token_type: string;
+  scope: string;
+  expires_in: number;
+  refresh_token: string;
+};
+
+const TOKEN_DATA_KEY = "spotify_token_data";
+
+const setTokenData = (tokenData: TokenData) => {
+  cache.setKey(TOKEN_DATA_KEY, tokenData);
+  cache.save();
+};
+
+const getTokenData = (): option.Option<TokenData> =>
+  option.fromNullable(cache.getKey(TOKEN_DATA_KEY));
+
+pipe(
+  getTokenData(),
+  option.map((tokenData) => {
+    spotifyApi.setAccessToken(tokenData.access_token);
+    spotifyApi.setRefreshToken(tokenData.refresh_token);
+  })
+);
 
 type AuthParams = {
   state: string;
@@ -38,14 +66,6 @@ const foldAuthParams: <T>(match: {
   } else {
     return match.other();
   }
-};
-
-type AccessTokenSuccess = {
-  access_token: string;
-  token_type: string;
-  scope: string;
-  expires_in: number;
-  refresh_token: string;
 };
 
 export const login = async () => {
@@ -94,8 +114,7 @@ export const login = async () => {
                 },
               }
             );
-            spotifyApi.setAccessToken(tokenReponse.data.access_token);
-            spotifyApi.setRefreshToken(tokenReponse.data.refresh_token);
+            setTokenData(tokenReponse.data);
             server.close();
             return res.send("<script>window.close()</script>");
           }, either.toError),
@@ -117,6 +136,9 @@ export const login = async () => {
 };
 
 export const getPlaylists = async () => {
+  if (!spotifyApi.getAccessToken()) {
+    return Promise.reject("No token found. You must firstly login to Spotify.");
+  }
   let playlists: Array<SpotifyApi.PlaylistObjectSimplified> = [];
   let response = await spotifyApi.getUserPlaylists();
   let offset = 0;
@@ -131,4 +153,9 @@ export const getPlaylists = async () => {
   return Promise.resolve(playlists);
 };
 
-export const getUser = () => spotifyApi.getMe();
+export const getUser = async () => {
+  if (!spotifyApi.getAccessToken()) {
+    return Promise.reject("No token found. You must firstly login to Spotify.");
+  }
+  return spotifyApi.getMe();
+};
